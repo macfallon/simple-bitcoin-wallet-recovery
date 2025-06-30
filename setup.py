@@ -12,7 +12,7 @@ setup(
     name="simple-bitcoin-wallet-recovery",
     version="1.0.0",
     author="Josh",
-    description="Recover Bitcoin from old wallet.dat files - successfully recovered $13k+!",
+    description="Recover Bitcoin from old wallet.dat files - successfully recovered 0.12+ BTC!",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/yourusername/simple-bitcoin-wallet-recovery",

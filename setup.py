@@ -15,7 +15,7 @@ setup(
     description="Recover Bitcoin from old wallet.dat files - successfully recovered 0.12+ BTC!",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/simple-bitcoin-wallet-recovery",
+    url="https://github.com/josh-stephens/simple-bitcoin-wallet-recovery",
     packages=find_packages(),
     classifiers=[
         "Development Status :: 4 - Beta",

@@ -49,6 +49,13 @@ try:
 except:
 	import json
 
+# Custom JSON encoder for Python 3 bytes compatibility
+class BytesEncoder(json.JSONEncoder):
+	def default(self, obj):
+		if isinstance(obj, bytes):
+			return obj.decode('utf-8', errors='replace')
+		return json.JSONEncoder.default(self, obj)
+
 import bisect
 import itertools
 import unicodedata
@@ -2686,7 +2693,7 @@ def read_wallet(json_db, db_env, walletfile, print_wallet, print_wallet_transact
 			json_db['minversion'] = d['minversion']
 
 		elif type == b"setting":
-			if not json_db.has_key('settings'):
+			if 'settings' not in json_db:
 				json_db['settings'] = Bdict({})
 			json_db["settings"][d['setting']] = d['value']
 
@@ -2703,7 +2710,7 @@ def read_wallet(json_db, db_env, walletfile, print_wallet, print_wallet_transact
 			json_db['keys'].append({'addr' : addr, 'sec' : sec, 'hexsec' : hexsec, 'secret' : hexsec, 'pubkey':binascii.hexlify(d['public_key']), 'compressed':compressed, 'private':binascii.hexlify(d['private_key'])})
 
 		elif type == b"wkey":
-			if not json_db.has_key('wkey'): json_db['wkey'] = []
+			if 'wkey' not in json_db: json_db['wkey'] = []
 			json_db['wkey']['created'] = d['created']
 
 		elif type == b"pool":
@@ -4209,14 +4216,14 @@ if __name__ == '__main__':
 
 	if options.find_address:
 		addr_data = filter(lambda x:x["addr"] == options.find_address, json_db["keys"]+json_db["pool"])
-		print(json.dumps(list(addr_data), sort_keys=True, indent=4))
+		print(json.dumps(list(addr_data), sort_keys=True, indent=4, cls=BytesEncoder))
 		exit()
 
 	if options.dump:
 		if options.dumpformat == 'addr':
 			addrs = list(map(lambda x:x["addr"], json_db["keys"]+json_db["pool"]))
 			json_db = addrs
-		wallet = json.dumps(json_db, sort_keys=True, indent=4)
+		wallet = json.dumps(json_db, sort_keys=True, indent=4, cls=BytesEncoder)
 		print(wallet)
 		exit()
 	elif options.key:

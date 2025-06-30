@@ -1,0 +1,15 @@
+⚠️ DEMO WALLET WARNING ⚠️
+
+This is a DEMO wallet created for testing the Bitcoin Wallet Recovery tool.
+
+DO NOT:
+- Send real Bitcoin to any addresses from this wallet
+- Import any keys from this wallet into a real wallet
+- Use this wallet for anything other than testing
+
+This wallet:
+- Contains no real Bitcoin
+- Has no valid private keys
+- Is for demonstration purposes only
+
+For real wallet recovery, use the tool with your actual wallet.dat files.

@@ -33,6 +33,67 @@ techniques, we recovered 0.12145281 BTC from an old wallet.dat file
 found on a backup drive. Now you can do the same!
 """
 
+# Security: Sensitive directory prefixes to warn about
+SENSITIVE_DIRECTORIES = [
+    # Unix system directories
+    '/etc', '/var', '/root', '/boot', '/proc', '/sys',
+    '/usr/bin', '/usr/sbin', '/bin', '/sbin',
+    # Windows system directories
+    'C:\\Windows', 'C:\\Program Files', 'C:\\Program Files (x86)',
+    'C:\\ProgramData', 'C:\\System Volume Information',
+]
+
+
+def validate_path(path: Path, must_be_dir: bool = False, must_be_file: bool = False) -> Path:
+    """
+    Validate and sanitize user-provided path.
+
+    Args:
+        path: User-provided path
+        must_be_dir: If True, path must be a directory
+        must_be_file: If True, path must be a file
+
+    Returns:
+        Resolved absolute path
+
+    Raises:
+        ValueError: If path is invalid or user cancels
+    """
+    # Resolve to absolute path (handles .., symlinks, etc.)
+    try:
+        resolved = path.resolve()
+    except (OSError, RuntimeError) as e:
+        raise ValueError(f"Invalid path: {path} ({e})")
+
+    # Check existence
+    if not resolved.exists():
+        raise ValueError(f"Path does not exist: {path}")
+
+    # Check type requirements
+    if must_be_dir and not resolved.is_dir():
+        raise ValueError(f"Not a directory: {path}")
+    if must_be_file and not resolved.is_file():
+        raise ValueError(f"Not a file: {path}")
+
+    # Check for symlinks pointing outside (potential attack vector)
+    if path.is_symlink():
+        print(f"⚠️  Warning: '{path}' is a symbolic link pointing to '{resolved}'")
+
+    # Warn about sensitive directories
+    resolved_str = str(resolved)
+    for sensitive in SENSITIVE_DIRECTORIES:
+        if resolved_str.lower().startswith(sensitive.lower()):
+            print(f"\n⚠️  WARNING: You are about to scan a system directory!")
+            print(f"   Path: {resolved}")
+            print(f"   This may take a long time and is usually not where wallets are stored.")
+            response = input("   Continue anyway? (y/N): ").strip().lower()
+            if response != 'y':
+                raise ValueError("Scan cancelled by user")
+            break
+
+    return resolved
+
+
 class WalletRecoveryWizard:
     """Main orchestrator for the wallet recovery process"""
     
@@ -547,59 +608,61 @@ def main():
     
     try:
         if args.scandir:
-            # Directory scan mode
-            scan_path = Path(args.scandir)
-            if not scan_path.exists():
-                print(f"❌ Error: Directory '{scan_path}' does not exist")
+            # Directory scan mode with path validation
+            try:
+                scan_path = validate_path(Path(args.scandir), must_be_dir=True)
+            except ValueError as e:
+                print(f"❌ Error: {e}")
                 sys.exit(1)
-                
+
             # Scan for .dat files
             dat_files = wizard.scan_directory(scan_path, dry_run=args.dry_run)
-            
+
             if not args.dry_run and dat_files:
                 # Analyze found files
                 wizard.analyze_dat_files(dat_files)
-                
+
                 # Process wallets
                 wizard.process_wallets()
-                
+
         elif args.wallet:
-            # Single wallet mode
-            wallet_path = Path(args.wallet)
-            if not wallet_path.exists():
-                print(f"❌ Error: File '{wallet_path}' does not exist")
+            # Single wallet mode with path validation
+            try:
+                wallet_path = validate_path(Path(args.wallet), must_be_file=True)
+            except ValueError as e:
+                print(f"❌ Error: {e}")
                 sys.exit(1)
-                
+
             # Process single wallet
             wizard.analyze_dat_files([wallet_path])
             wizard.process_wallets()
-            
+
         else:
             # Interactive mode
             print("Choose an option:")
             print("1. Scan a directory for wallets")
             print("2. Analyze a specific wallet file")
             choice = input("\nEnter choice (1 or 2): ").strip()
-            
+
             if choice == '1':
                 path = input("Enter directory path to scan: ").strip()
-                scan_path = Path(path)
-                if scan_path.exists():
+                try:
+                    scan_path = validate_path(Path(path), must_be_dir=True)
                     dat_files = wizard.scan_directory(scan_path)
                     if dat_files:
                         wizard.analyze_dat_files(dat_files)
                         wizard.process_wallets()
-                else:
-                    print(f"❌ Error: Directory '{scan_path}' does not exist")
-                    
+                except ValueError as e:
+                    print(f"❌ Error: {e}")
+
             elif choice == '2':
                 path = input("Enter wallet file path: ").strip()
-                wallet_path = Path(path)
-                if wallet_path.exists():
+                try:
+                    wallet_path = validate_path(Path(path), must_be_file=True)
                     wizard.analyze_dat_files([wallet_path])
                     wizard.process_wallets()
-                else:
-                    print(f"❌ Error: File '{wallet_path}' does not exist")
+                except ValueError as e:
+                    print(f"❌ Error: {e}")
                     
     finally:
         # Generate final report

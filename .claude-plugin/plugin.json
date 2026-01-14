@@ -1,0 +1,21 @@
+{
+  "name": "bitcoin-wallet-recovery",
+  "version": "2.0.0",
+  "description": "Recover Bitcoin from old wallet.dat files - detect wallets, extract keys, check balances, export for transfer",
+  "author": {
+    "name": "Josh Stephens",
+    "url": "https://github.com/josh-stephens"
+  },
+  "repository": "https://github.com/josh-stephens/simple-bitcoin-wallet-recovery",
+  "homepage": "https://github.com/josh-stephens/simple-bitcoin-wallet-recovery",
+  "license": "MIT",
+  "keywords": [
+    "bitcoin",
+    "wallet",
+    "recovery",
+    "cryptocurrency",
+    "private-keys",
+    "wallet.dat",
+    "blockchain"
+  ]
+}

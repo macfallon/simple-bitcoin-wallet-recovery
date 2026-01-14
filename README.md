@@ -17,11 +17,27 @@ Have you found an old `wallet.dat` file and wonder if it contains Bitcoin? This 
 
 ## 🚀 Quick Start
 
-### Installation
+### Option 1: Claude Code Plugin (Recommended)
+
+If you use [Claude Code](https://claude.ai/code), install as a plugin:
+
+```bash
+# Add the marketplace
+/plugin marketplace add josh-stephens/simple-bitcoin-wallet-recovery
+
+# Install the plugin
+/plugin install bitcoin-wallet-recovery@simple-bitcoin-wallet-recovery
+```
+
+Then use commands like `/recover-wallet /path/to/wallet.dat`
+
+See [Plugin Installation Guide](docs/PLUGIN_INSTALL.md) for details.
+
+### Option 2: Standalone Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/simple-bitcoin-wallet-recovery.git
+git clone https://github.com/josh-stephens/simple-bitcoin-wallet-recovery.git
 cd simple-bitcoin-wallet-recovery
 
 # Install dependencies

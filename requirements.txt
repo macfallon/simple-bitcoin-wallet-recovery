@@ -4,14 +4,14 @@
 # Core dependencies
 bsddb3>=6.2.9          # Berkeley DB bindings for wallet files
 ecdsa>=0.19.0          # Elliptic curve cryptography for Bitcoin
-requests>=2.25.0       # HTTP library for blockchain APIs
+requests>=2.31.0       # HTTP library for blockchain APIs (security: CVE-2023-32681)
 
 # Optional but recommended
-cryptography>=3.4.8    # For encrypted exports
-qrcode[pil]>=7.3      # For QR code generation
+cryptography>=41.0.0   # For encrypted exports (security: multiple CVEs in older versions)
+qrcode[pil]>=7.3       # For QR code generation
 python-bitcoinlib>=0.12.0  # Additional Bitcoin utilities
 
 # Development dependencies
-pytest>=7.0.0         # Testing framework
-black>=22.0.0         # Code formatter
-flake8>=4.0.0         # Linter
+pytest>=7.0.0          # Testing framework
+black>=22.0.0          # Code formatter
+flake8>=4.0.0          # Linter

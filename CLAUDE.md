@@ -4,178 +4,93 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Simple Bitcoin Wallet Recovery is a user-friendly tool for recovering Bitcoin from old wallet.dat files. Born from a real success story of recovering 0.12145281 BTC from a forgotten wallet, it streamlines the complex process into a simple wizard.
+Simple Bitcoin Wallet Recovery is a tool for recovering Bitcoin from old wallet.dat files. It detects Bitcoin wallets, extracts private keys using a modified PyWallet, checks balances across multiple blockchain APIs, and exports keys in formats compatible with modern wallets.
 
-## Project Structure
+## Plugin Commands
 
-```
-simple-bitcoin-wallet-recovery/
-├── recovery_wizard.py      # Main entry point - orchestrates the recovery process
-├── pywallet.py            # Modified PyWallet core for wallet reading
-├── lib/
-│   ├── wallet_detector.py  # Analyzes .dat files to identify Bitcoin wallets
-│   ├── balance_checker.py  # Multi-source blockchain API balance verification
-│   └── secure_exporter.py  # Secure private key export in multiple formats
-├── docs/
-│   ├── TROUBLESHOOTING.md  # Common issues and solutions
-│   └── SECURITY.md         # Security best practices
-└── [legacy scripts]        # Original recovery scripts kept for reference
-```
+This repository is a Claude Code plugin. When installed, these slash commands are available:
 
-## Key Commands
+| Command | Description |
+|---------|-------------|
+| `/recover-wallet <path>` | Full recovery wizard on file or directory |
+| `/scan-wallets <directory>` | Scan directory for wallet files |
+| `/detect-wallet <file>` | Check if a file is a Bitcoin wallet |
+| `/check-balance <address>` | Check Bitcoin address balance |
 
-### Setup and Dependencies
+## CLI Commands
 
 ```bash
-# Install system dependencies (Ubuntu/Debian)
-sudo apt-get install -y python3-bsddb3 libdb-dev
+# Install dependencies
+pip install -r requirements.txt
 
-# Install Python packages
-pip3 install -r requirements.txt
+# System dependencies (Ubuntu/Debian - Berkeley DB required)
+sudo apt-get install python3-bsddb3 libdb-dev
 
-# Quick install
-pip3 install bsddb3 ecdsa requests
-```
+# Run recovery wizard (main entry point)
+python3 recovery_wizard.py --scandir /path/to/scan     # Scan directory
+python3 recovery_wizard.py wallet.dat                   # Single file
+python3 recovery_wizard.py --scandir /path --dry-run   # Preview scan
 
-### Running the Tool
-
-```bash
-# Basic wallet recovery
-python3 recovery_wizard.py wallet.dat
-
-# Scan directory for wallets
-python3 recovery_wizard.py --scan /path/to/directory/
-
-# Direct wallet dump (legacy)
+# Direct pywallet dump (legacy)
 python3 pywallet.py --wallet=wallet.dat --dumpwallet
+
+# Test individual modules
+python3 lib/wallet_detector.py /path/to/file.dat
+python3 lib/balance_checker.py
 ```
 
-### Development and Testing
+## Architecture
 
-```bash
-# Run tests
-pytest tests/
-
-# Check code style
-black --check .
-flake8 .
-
-# Format code
-black .
+### Module Flow
+```
+recovery_wizard.py (orchestrator)
+    ├── lib/wallet_detector.py  → Identifies Bitcoin wallets via Berkeley DB headers + pattern matching
+    ├── pywallet.py             → Extracts keys from wallet.dat (subprocess call with --dumpwallet)
+    ├── lib/balance_checker.py  → Multi-API balance verification with caching
+    └── lib/secure_exporter.py  → Exports keys in multiple formats
 ```
 
-## Architecture and Key Components
+### Wallet Detection (`lib/wallet_detector.py`)
+- Analyzes files for Berkeley DB magic bytes (versions 4.x, 5.x, 6.x)
+- Pattern matches for wallet-specific strings: `defaultkey`, `bestblock`, `pool`, `key`, `wkey`, `ckey`, `mkey`
+- Returns confidence score 0-100%; threshold for "is wallet" is 40%
 
-### 1. Recovery Wizard (`recovery_wizard.py`)
-- Main orchestrator that guides users through the recovery process
-- Handles user interaction and progress display
-- Coordinates between detector, extractor, checker, and exporter modules
-- Implements graceful error handling and recovery
+### Balance Checking (`lib/balance_checker.py`)
+- APIs: blockchain.info (batch 100), blockstream, blockcypher, mempool.space
+- Rate limits: 0.1-1.0 seconds between requests per API
+- Caching: 1-hour TTL in `.balance_cache/` directory
+- Uses median consensus when multiple APIs return different values
 
-### 2. Wallet Detector (`lib/wallet_detector.py`)
-- **Universal .dat file analysis** - can identify Bitcoin wallets even if renamed
-- Berkeley DB header detection for multiple versions
-- Pattern matching for wallet-specific data structures
-- Confidence scoring system (0-100%)
-- Batch directory scanning capabilities
+### Key Export (`lib/secure_exporter.py`)
+- Formats: `electrum`, `bitcoin_core`, `json`, `csv`, `qr`, `encrypted`
+- Sets file permissions to 600 on Unix systems
+- Encrypted export uses AES-256 via PBKDF2HMAC
 
-### 3. Balance Checker (`lib/balance_checker.py`)
-- **Multi-source verification** across 4+ blockchain APIs
-- Intelligent retry logic with exponential backoff
-- Response caching to minimize API calls
-- Consensus algorithm for balance verification
-- Handles rate limiting gracefully
+### PyWallet (`pywallet.py`)
+- Modified fork of jackjack's pywallet v2.2
+- Python 3 compatibility: uses `BytesEncoder` for JSON serialization, `in` operator instead of `has_key()`
+- Handles byte/string conversions via `Bdict` class
 
-### 4. Secure Exporter (`lib/secure_exporter.py`)
-- Multiple export formats: Electrum, Bitcoin Core, JSON, CSV, QR codes
-- Secure file permissions (600 on Unix)
-- Optional encryption with AES-256
-- Secure deletion utilities
-- Automatic security warnings and guides
+## Output Structure
 
-### 5. PyWallet Core (`pywallet.py`)
-- Modified for Python 3 compatibility
-- Key changes from original:
-  - `has_key()` → `in` operator (lines 2689, 2706)
-  - Added `BytesEncoder` class for JSON serialization
-  - Better error handling and reporting
+The wizard creates a timestamped directory:
+```
+bitcoin_recovery_YYYYMMDD_HHMMSS/
+├── scratch/                    # Temporary files (deletable)
+├── output/
+│   ├── summary_report.txt
+│   ├── funded_wallets/         # Wallets with balance
+│   │   └── wallet_XXX/
+│   │       ├── private_keys.txt
+│   │       ├── wallet_info.json
+│   │       └── TRANSFER_GUIDE.txt
+│   ├── empty_wallets/
+│   └── logs/scan_log.json
+```
 
-## Important Implementation Details
+## Development Notes
 
-### Python 3 Compatibility
-The codebase has been updated for Python 3.7+ compatibility:
-- Byte string handling with proper encoding/decoding
-- Modern exception syntax
-- Type hints in newer modules
-- f-strings for formatting
-
-### Security Considerations
-- Private keys are handled in memory and written to disk with restrictive permissions
-- All exported files include security warnings
-- Temporary files are securely deleted when possible
-- No network activity except blockchain API calls for balance checking
-
-### API Rate Limiting
-Balance checker implements smart rate limiting:
-- Blockchain.info: 100 addresses per call, 1 second delay
-- Blockstream: Single address, 0.25 second delay
-- BlockCypher: Single address, 0.33 second delay
-- Mempool.space: Single address, 0.1 second delay
-
-### Error Recovery
-- Wallet detection continues even if some files fail
-- Balance checking retries failed APIs with others
-- Partial recovery possible for corrupted wallets
-- All errors are logged with helpful messages
-
-## Common Development Tasks
-
-### Adding a New Blockchain API
-1. Add API configuration to `APIS` dict in `balance_checker.py`
-2. Implement `_parse_[api_name]()` method
-3. Add to consensus algorithm
-4. Update documentation
-
-### Adding Export Format
-1. Add format to `FORMATS` dict in `secure_exporter.py`
-2. Implement `_export_[format]()` method
-3. Update security warnings if needed
-4. Add format to documentation
-
-### Improving Wallet Detection
-1. Add new patterns to `WALLET_PATTERNS` in `wallet_detector.py`
-2. Update confidence scoring algorithm
-3. Test with various wallet versions
-4. Document new detection capabilities
-
-## Testing Approach
-
-### Unit Tests
-- Each module has independent test coverage
-- Mock blockchain API responses for consistent testing
-- Test edge cases (corrupted files, API failures, etc.)
-
-### Integration Tests
-- Full recovery workflow with test wallets
-- Multi-format export verification
-- Performance tests for large wallets (1000+ addresses)
-
-### Security Tests
-- Verify secure file permissions
-- Test secure deletion functionality
-- Validate no sensitive data in logs
-
-## Performance Considerations
-
-- Large wallets (1000+ addresses) are processed in batches
-- API responses are cached to disk with 1-hour TTL
-- Berkeley DB operations are read-only for safety
-- Memory usage is O(n) with number of addresses
-
-## Future Enhancements Planned
-
-1. **Wallet corruption recovery** - Partial extraction from damaged files
-2. **Multi-wallet management** - Handle multiple wallets in one session
-3. **Real-time notifications** - Watch addresses for new transactions
-4. **Hardware wallet integration** - Direct export to Ledger/Trezor
-5. **GUI version** - Electron or PyQt interface
+- Berkeley DB library (`bsddb3`) is the critical dependency - install system packages first
+- Files under 10KB are skipped during directory scans
+- Balance checker limits to first 1000 addresses per wallet
+- Wallet processing runs pywallet via subprocess to isolate potential crashes

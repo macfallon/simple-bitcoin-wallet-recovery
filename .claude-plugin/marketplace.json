@@ -1,0 +1,27 @@
+{
+  "name": "bitcoin-recovery-tools",
+  "description": "Bitcoin wallet recovery tools for Claude Code - detect old wallets, extract keys, check balances",
+  "owner": {
+    "name": "Josh Stephens",
+    "url": "https://github.com/josh-stephens"
+  },
+  "plugins": [
+    {
+      "name": "bitcoin-wallet-recovery",
+      "source": ".",
+      "description": "Recover Bitcoin from old wallet.dat files - detect wallets, extract private keys, check balances across multiple blockchain APIs, and export keys for transfer to modern wallets",
+      "version": "2.0.0",
+      "author": "Josh Stephens",
+      "license": "MIT",
+      "keywords": [
+        "bitcoin",
+        "wallet",
+        "recovery",
+        "cryptocurrency",
+        "private-keys"
+      ],
+      "category": "utilities",
+      "homepage": "https://github.com/josh-stephens/simple-bitcoin-wallet-recovery"
+    }
+  ]
+}

@@ -7,12 +7,64 @@ Multi-source Bitcoin balance verification with retry logic and caching.
 Checks balances across multiple blockchain APIs for reliability.
 """
 
+import re
 import time
 import json
 import requests
 from typing import Dict, List, Optional, Tuple
 from datetime import datetime, timedelta
 from pathlib import Path
+
+
+def validate_bitcoin_address(address: str) -> bool:
+    """
+    Validate Bitcoin address format.
+
+    Supports:
+    - Legacy P2PKH addresses (start with 1)
+    - Legacy P2SH addresses (start with 3)
+    - Native SegWit bech32 addresses (start with bc1)
+    - Testnet addresses (start with m, n, 2, or tb1)
+
+    Args:
+        address: Bitcoin address string to validate
+
+    Returns:
+        True if address format is valid, False otherwise
+    """
+    if not address or not isinstance(address, str):
+        return False
+
+    # Remove any whitespace
+    address = address.strip()
+
+    # Legacy P2PKH (starts with 1) - 25-34 characters
+    if re.match(r'^1[a-km-zA-HJ-NP-Z1-9]{25,34}$', address):
+        return True
+
+    # Legacy P2SH (starts with 3) - 25-34 characters
+    if re.match(r'^3[a-km-zA-HJ-NP-Z1-9]{25,34}$', address):
+        return True
+
+    # Native SegWit bech32 (starts with bc1) - mainnet
+    # bc1q... (P2WPKH) or bc1p... (P2TR/Taproot)
+    if re.match(r'^bc1[a-zA-HJ-NP-Z0-9]{25,89}$', address, re.IGNORECASE):
+        return True
+
+    # Testnet P2PKH (starts with m or n)
+    if re.match(r'^[mn][a-km-zA-HJ-NP-Z1-9]{25,34}$', address):
+        return True
+
+    # Testnet P2SH (starts with 2)
+    if re.match(r'^2[a-km-zA-HJ-NP-Z1-9]{25,34}$', address):
+        return True
+
+    # Testnet bech32 (starts with tb1)
+    if re.match(r'^tb1[a-zA-HJ-NP-Z0-9]{25,89}$', address, re.IGNORECASE):
+        return True
+
+    return False
+
 
 class BalanceChecker:
     """Check Bitcoin balances across multiple blockchain APIs"""
@@ -57,17 +109,27 @@ class BalanceChecker:
     def check_balance(self, address: str, use_cache: bool = True) -> Dict:
         """
         Check balance for a single address across multiple sources.
-        
+
         Returns:
             Dict with balance, tx_count, and verification details
         """
+        # Validate address format first
+        if not validate_bitcoin_address(address):
+            return {
+                'balance': 0,
+                'tx_count': 0,
+                'verified': False,
+                'sources': [],
+                'error': f'Invalid Bitcoin address format: {address[:20]}...' if len(address) > 20 else f'Invalid Bitcoin address format: {address}'
+            }
+
         # Check cache first
         if use_cache:
             cached = self._get_cached_balance(address)
             if cached:
                 self.stats['cache_hits'] += 1
                 return cached
-                
+
         results = {}
         
         # Try each API
@@ -103,16 +165,30 @@ class BalanceChecker:
     def check_batch(self, addresses: List[str], use_cache: bool = True) -> Dict[str, Dict]:
         """
         Check balances for multiple addresses efficiently.
-        
+
         Returns:
             Dict mapping address to balance info
         """
         results = {}
-        
-        # First, check cache for all addresses
+
+        # Validate all addresses first, filter out invalid ones
+        valid_addresses = []
+        for address in addresses:
+            if not validate_bitcoin_address(address):
+                results[address] = {
+                    'balance': 0,
+                    'tx_count': 0,
+                    'verified': False,
+                    'sources': [],
+                    'error': 'Invalid Bitcoin address format'
+                }
+            else:
+                valid_addresses.append(address)
+
+        # First, check cache for all valid addresses
         uncached_addresses = []
         if use_cache:
-            for address in addresses:
+            for address in valid_addresses:
                 cached = self._get_cached_balance(address)
                 if cached:
                     results[address] = cached
@@ -120,7 +196,7 @@ class BalanceChecker:
                 else:
                     uncached_addresses.append(address)
         else:
-            uncached_addresses = addresses
+            uncached_addresses = valid_addresses
             
         # Use blockchain.info for batch checking (most efficient)
         if uncached_addresses:

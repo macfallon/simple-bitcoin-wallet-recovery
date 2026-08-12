@@ -19,7 +19,7 @@ This guide explains how to install and use the Bitcoin Wallet Recovery plugin wi
 ### Step 2: Install the Plugin
 
 ```bash
-/plugin install bitcoin-wallet-recovery@simple-bitcoin-wallet-recovery
+/plugin install bitcoin-wallet-recovery@bitcoin-recovery-tools
 ```
 
 ### Step 3: Verify Installation
@@ -30,7 +30,7 @@ This guide explains how to install and use the Bitcoin Wallet Recovery plugin wi
 
 You should see:
 ```
-bitcoin-wallet-recovery@simple-bitcoin-wallet-recovery (enabled)
+bitcoin-wallet-recovery@bitcoin-recovery-tools (enabled)
 ```
 
 ## Install Python Dependencies
@@ -121,7 +121,7 @@ After installation, these commands are available in Claude Code:
 ## Uninstalling
 
 ```bash
-/plugin uninstall bitcoin-wallet-recovery@simple-bitcoin-wallet-recovery
+/plugin uninstall bitcoin-wallet-recovery@bitcoin-recovery-tools
 /plugin marketplace remove simple-bitcoin-wallet-recovery
 ```
 

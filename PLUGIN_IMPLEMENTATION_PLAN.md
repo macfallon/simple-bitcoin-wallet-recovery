@@ -312,7 +312,7 @@ git push origin master --tags
 
 **Step 2: Install the plugin**
 ```bash
-/plugin install bitcoin-wallet-recovery@simple-bitcoin-wallet-recovery
+/plugin install bitcoin-wallet-recovery@bitcoin-recovery-tools
 ```
 
 **Alternative: One-liner if marketplace structure allows**
@@ -358,13 +358,13 @@ git push origin master --tags
 
 **Step 2: Install the plugin**
 ```bash
-/plugin install bitcoin-wallet-recovery@simple-bitcoin-wallet-recovery
+/plugin install bitcoin-wallet-recovery@bitcoin-recovery-tools
 ```
 
 **Step 3: Verify installation**
 ```bash
 /plugin list
-# Should show: bitcoin-wallet-recovery@simple-bitcoin-wallet-recovery (enabled)
+# Should show: bitcoin-wallet-recovery@bitcoin-recovery-tools (enabled)
 ```
 
 ### Install Python Dependencies
@@ -418,7 +418,7 @@ After installation, these commands are available:
 ### Uninstalling
 
 ```bash
-/plugin uninstall bitcoin-wallet-recovery@simple-bitcoin-wallet-recovery
+/plugin uninstall bitcoin-wallet-recovery@bitcoin-recovery-tools
 /plugin marketplace remove simple-bitcoin-wallet-recovery
 ```
 ```
@@ -441,7 +441,7 @@ Add to `.claude/settings.json` in your team's repos:
     }
   },
   "enabledPlugins": {
-    "bitcoin-wallet-recovery@simple-bitcoin-wallet-recovery": true
+    "bitcoin-wallet-recovery@bitcoin-recovery-tools": true
   }
 }
 ```

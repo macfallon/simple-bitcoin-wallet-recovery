@@ -11,7 +11,10 @@
       "source": ".",
       "description": "Recover Bitcoin from old wallet.dat files - detect wallets, extract private keys, check balances across multiple blockchain APIs, and export keys for transfer to modern wallets",
       "version": "2.0.0",
-      "author": "Josh Stephens",
+      "author": {
+        "name": "Josh Stephens",
+        "url": "https://github.com/josh-stephens"
+      },
       "license": "MIT",
       "keywords": [
         "bitcoin",

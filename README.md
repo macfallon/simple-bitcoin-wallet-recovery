@@ -26,7 +26,7 @@ If you use [Claude Code](https://claude.ai/code), install as a plugin:
 /plugin marketplace add josh-stephens/simple-bitcoin-wallet-recovery
 
 # Install the plugin
-/plugin install bitcoin-wallet-recovery@simple-bitcoin-wallet-recovery
+/plugin install bitcoin-wallet-recovery@bitcoin-recovery-tools
 ```
 
 Then use commands like `/recover-wallet /path/to/wallet.dat`
